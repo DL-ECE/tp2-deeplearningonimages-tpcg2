@@ -589,7 +589,7 @@ display_image(image)
 
 # output_image = convolution_forward_numpyRGB(image,K_0)
 #output_image = convolution_forward_torch(image,K_0)
-display_image(output_image)
+#display_image(output_image)
 
 """## 3) Computation using __pytorch__
 
