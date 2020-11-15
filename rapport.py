@@ -184,12 +184,17 @@ def normalize_tensor(input_tensor: torch.Tensor) -> torch.Tensor:
 def sigmoid(input_tensor: torch.Tensor) -> torch.Tensor:
     """Apply a sigmoid to the input Tensor"""
     # YOUR CODE HERE
+    if (type(input_tensor) != torch.Tensor):
+      input_tensor = torch.from_numpy(input_tensor.astype(np.float32)) 
+    temp = torch.exp(input_tensor)
     res = 1 / (1 + torch.exp(-input_tensor))
     return res
 
 def softmax(input_tensor: torch.Tensor)-> torch.Tensor:
     """Apply a softmax to the input tensor"""
-    # YOUR CODE HERE 
+    # YOUR CODE HERE
+    if (type(input_tensor) != torch.Tensor):
+      input_tensor = torch.from_numpy(input_tensor.astype(np.float32)) 
     temp = torch.exp(input_tensor)
     somme = torch.sum(temp,axis=1).reshape(-1,1)
     res = temp/somme
@@ -198,6 +203,8 @@ def softmax(input_tensor: torch.Tensor)-> torch.Tensor:
 def target_to_one_hot(targets: torch.Tensor, num_classes=10) -> torch.Tensor:
     """Create the one hot representation of the target""" 
     # YOUR CODE HERE 
+    if (type(targets) != torch.Tensor):
+      targets = torch.from_numpy(targets.astype(np.float32))
     res = torch.zeros((targets.shape[1], num_classes))
     for i in range(targets.shape[1]):
       for j in range (num_classes):
@@ -210,9 +217,9 @@ def target_to_one_hot(targets: torch.Tensor, num_classes=10) -> torch.Tensor:
 #print(ts)
 #tso = softmax(ts)
 #print(tso)
-#t = torch.tensor([[1,9,6,3,7]])
-#tt = target_to_one_hot(t,10)
-#print(tt)
+t = torch.tensor([[1,9,6,3,7]])
+tt = target_to_one_hot(t,10)
+print(tt)
 
 # However as mention above pytorch already has some built-ins function 
 
@@ -609,11 +616,32 @@ display_image(image)
 Now let's use pytorch convolution layer to do the forward pass. Use the documentation available at: https://pytorch.org/docs/stable/nn.html
 """
 
-def convolution_forward_torch(image):
+def convolution_forward_torch(image,kernel):
+    # YOUR CODE HERE
+    m = nn.Conv1d(image.shape[1],image.shape[1],3,stride=1,padding=1)
+    t = torch.zeros(kernel.shape[0],kernel.shape[1],3)
+    t[:][:] = kernel
+    m.weight = torch.nn.Parameter(t)
+    print(m.weight.shape)
+    print(image.shape)
+    output_image = m(image)
+    return output_image
+
+def convolution_forward_torch2(image):
     # YOUR CODE HERE 
     m = nn.Conv1d(image.shape[1],image.shape[1],3,stride=1,padding=1)
     output_image = m(image)
+    print("Dimentions du poids = ",m.weight.shape)
     return output_image
+
+print(type(image))
+#output = convolution_forward_torch(image,K_0)
+output = convolution_forward_torch2(image)
+#plt.imshow(output.detach().numpy())
+t = torch.zeros(3,3,3)
+print(t.shape)
+t[:][:] = K_0
+print(t)
 
 """In pytorch you can also access other layer like convolution2D, pooling layers, for example in the following cell use the __torch.nn.MaxPool2d__ to redduce the image size."""
 
@@ -693,11 +721,16 @@ Softmax
 ```
 """
 
+m = nn.Linear(28, 30)
+input = torch.randn(128, 28, 28)
+output = m(input)
+print(output.size())
+
 class CNNModel(nn.Module):
     def __init__(self, classes=10):
         super().__init__()
         # YOUR CODE HERE 
-        self.conv1 = convolution_forward_torch
+        self.conv1 = convolution_forward_torch1
         self.maxp = nn.MaxPool1d(3)
         self.dense1 = nn.Linear(28, 28)
 
@@ -706,13 +739,21 @@ class CNNModel(nn.Module):
         print("Input shape in the forward = ",input.shape)
         print("Input shape in the forward = ",type(input))
         input = input.cpu()
+        print("Input shape = ",input.shape)
         x = self.conv1(input[0])
+        print("X shape after conv1 = ",x.shape)
         x = self.conv1(x)
+        print("X shape after conv1 = ",x.shape)
         x = self.maxp(x)
+        print("X shape after map = ",x.shape)
         x = self.conv1(x)
+        print("X shape after conv1 = ",x.shape)
         x = self.conv1(x)
+        print("X shape after conv1 = ",x.shape)
         x = self.maxp(x)
+        print("X shape after map = ",x.shape)
         x = x.cuda()
+        print("X shape = ",x.shape)
         x = self.dense1(x)
         x = self.dense1(x)
         x = self.dense1(x)
