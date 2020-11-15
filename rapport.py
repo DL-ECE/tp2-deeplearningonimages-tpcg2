@@ -204,15 +204,15 @@ def target_to_one_hot(targets: torch.Tensor, num_classes=10) -> torch.Tensor:
         if (j==targets[0][i]):
           res[i][j] = 1
     return res
-tn = normalize_tensor(mat_torch)
-print(tn)
-ts = sigmoid(tn)
-print(ts)
-tso = softmax(ts)
-print(tso)
-t = torch.tensor([[1,9,6,3,7]])
-tt = target_to_one_hot(t,10)
-print(tt)
+#tn = normalize_tensor(mat_torch)
+#print(tn)
+#ts = sigmoid(tn)
+#print(ts)
+#tso = softmax(ts)
+#print(tso)
+#t = torch.tensor([[1,9,6,3,7]])
+#tt = target_to_one_hot(t,10)
+#print(tt)
 
 # However as mention above pytorch already has some built-ins function 
 
@@ -652,7 +652,7 @@ def display_10_images(dataset):
       if (i==10):
         break
       i += 1
-display_10_images(fmnist_train)
+#display_10_images(fmnist_train)
 #display_10_images(fmnist_val)
 
 """What is the shape of each images
@@ -712,6 +712,7 @@ class CNNModel(nn.Module):
         x = self.conv1(x)
         x = self.conv1(x)
         x = self.maxp(x)
+        x = x.cuda()
         x = self.dense1(x)
         x = self.dense1(x)
         x = self.dense1(x)
