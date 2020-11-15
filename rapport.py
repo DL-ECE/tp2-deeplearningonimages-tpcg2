@@ -634,15 +634,6 @@ def convolution_forward_torch2(image):
     print("Dimentions du poids = ",m.weight.shape)
     return output_image
 
-print(type(image))
-#output = convolution_forward_torch(image,K_0)
-output = convolution_forward_torch2(image)
-#plt.imshow(output.detach().numpy())
-t = torch.zeros(3,3,3)
-print(t.shape)
-t[:][:] = K_0
-print(t)
-
 """In pytorch you can also access other layer like convolution2D, pooling layers, for example in the following cell use the __torch.nn.MaxPool2d__ to redduce the image size."""
 
 
