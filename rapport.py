@@ -204,10 +204,11 @@ def target_to_one_hot(targets: torch.Tensor, num_classes=10) -> torch.Tensor:
     """Create the one hot representation of the target""" 
     # YOUR CODE HERE 
     if (type(targets) != torch.Tensor):
-      res = torch.zeros((targets.size, num_classes))
+      taille = targets.size
     else :
-      res = torch.zeros((targets.shape[1], num_classes))
-    for i in range(targets.shape[1]):
+      taille = targets.shape[1]
+    res = torch.zeros((taille, num_classes))
+    for i in range(taille):
       for j in range (num_classes):
         if (j==targets[0][i]):
           res[i][j] = 1
