@@ -623,23 +623,21 @@ display_image(image)
 Now let's use pytorch convolution layer to do the forward pass. Use the documentation available at: https://pytorch.org/docs/stable/nn.html
 """
 
-def convolution_forward_torch(image,kernel):
-    # YOUR CODE HERE
-    m = nn.Conv1d(image.shape[1],image.shape[1],3,stride=1,padding=1)
-    t = torch.zeros(kernel.shape[0],kernel.shape[1],3)
-    t[:][:] = kernel
-    m.weight = torch.nn.Parameter(t)
-    print(m.weight.shape)
-    print(image.shape)
-    output_image = m(image)
-    return output_image
+def convolution_forward_torch(image, kernel):
+    convol = nn.Conv2d(1638 ,1,kernel.shape,stride=2) 
+    ker = torch.from_numpy(kernel)
+    image = torch.from_numpy(image)
+    #image = image.type(torch.LongTensor)
+    #convol.weight = torch.nn.Parameter(ker)
+    image = torch.unsqueeze(image, 0)
+    image = image.float()
+    output = convol(image)
+    return output
 
-def convolution_forward_torch2(image):
-    # YOUR CODE HERE 
-    m = nn.Conv1d(image.shape[1],image.shape[1],3,stride=1,padding=1)
-    output_image = m(image)
-    print("Dimentions du poids = ",m.weight.shape)
-    return output_image
+# Test de la fonction
+#output_image = convolution_forward_torch(image,K_0)
+#output_image = output_image.detach().numpy()
+#display_image(output_image)
 
 """In pytorch you can also access other layer like convolution2D, pooling layers, for example in the following cell use the __torch.nn.MaxPool2d__ to redduce the image size."""
 
@@ -668,12 +666,14 @@ if __name__ == "__main__" :
 
 def display_10_images(dataset):
     # YOUR CODE HERE
+    fig = plt.figure()
     i = 0
     for (image,target) in dataset:
       t = torch.zeros([28,28,3])
       t [:,:,0] = image[0,:,:]
       t [:,:,1] = image[0,:,:]
       t [:,:,2] = image[0,:,:]
+      plt.figure(i)
       plot_one_tensor(t)
       if (i==10):
         break
@@ -719,44 +719,79 @@ Softmax
 ```
 """
 
-m = nn.Linear(28, 30)
-input = torch.randn(128, 28, 28)
-output = m(input)
-print(output.size())
+# Test pour comprendre les changements de dimensions
+mp = nn.MaxPool2d(kernel_size=3,stride=2)
+conv1 = nn.Conv1d(3,3,kernel_size=11,stride=4)
+conv2 = nn.Conv1d(3,96,kernel_size=11,stride=4)
+conv3 = nn.Conv1d(96,256,kernel_size=5,padding=2)
+input = torch.randn(227, 227, 3)
+input = input.permute(0,2,1)
+print(input.shape)
+output = conv1(input)
+output = output.permute(2,1,0)
+output = conv1(output)
+output = conv2(output)
+print("après conv",output.size())
+output = output.permute(1,0,2)
+print("abc",output.shape)
+output = mp(output)
+print(output.shape)
+output = output.permute(1,0,2)
+output = conv3(output)
+print(output.shape)
 
 class CNNModel(nn.Module):
     def __init__(self, classes=10):
         super().__init__()
         # YOUR CODE HERE 
-        self.conv1 = convolution_forward_torch1
-        self.maxp = nn.MaxPool1d(3)
-        self.dense1 = nn.Linear(28, 28)
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=5, padding=2),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.Conv2d(16, 16, kernel_size=5, padding=2),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.Conv2d(16, 16, kernel_size=5, padding=2),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d(2))
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(16, 32, kernel_size=5, padding=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=5, padding=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=5, padding=2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2))
+        self.layer3 = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=5, padding=2),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=5, padding=2),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=5, padding=2),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2))
+        self.fc = nn.Linear(3*3*64, 10)
 
 
     def forward(self, input):
-        print("Input shape in the forward = ",input.shape)
-        print("Input shape in the forward = ",type(input))
-        input = input.cpu()
-        print("Input shape = ",input.shape)
-        x = self.conv1(input[0])
-        print("X shape after conv1 = ",x.shape)
-        x = self.conv1(x)
-        print("X shape after conv1 = ",x.shape)
-        x = self.maxp(x)
-        print("X shape after map = ",x.shape)
-        x = self.conv1(x)
-        print("X shape after conv1 = ",x.shape)
-        x = self.conv1(x)
-        print("X shape after conv1 = ",x.shape)
-        x = self.maxp(x)
-        print("X shape after map = ",x.shape)
-        x = x.cuda()
-        print("X shape = ",x.shape)
-        x = self.dense1(x)
-        x = self.dense1(x)
-        x = self.dense1(x)
-        # YOUR CODE HERE 
-        y = softmax(x)
+        #print("AaA")
+        #print("Input shape :",input.shape)
+        output1 = self.layer1(input)
+        #print("Output1 shape :",output1.shape)
+        output2 = self.layer2(output1)
+        #print("Output2 shape :",output2.shape)
+        output3 = self.layer3(output2)
+        #print("Output3 shape :",output3.shape)
+        output3 = output3.view(output3.size(0),-1)
+        y = self.fc(output3)
+        #print("Y shape :",y.shape)
         return y
 
 def train_one_epoch(model, device, data_loader, optimizer):
@@ -768,7 +803,7 @@ def train_one_epoch(model, device, data_loader, optimizer):
         output = model(data)
 
         # YOUR CODE HERE 
-        loss = torch.nn.MSELoss()
+        loss = F.cross_entropy(output,target)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -787,11 +822,10 @@ def evaluation(model, device, data_loader):
 
     for num, (data, target) in tq.tqdm(enumerate(data_loader), total=len(data_loader.dataset)/data_loader.batch_size):
         data, target = data.to(device), target.to(device)
-        print("Data shape = ",data.shape)
         # Appel à CNN juste en dessous
         output = model(data)
         # YOUR CODE HERE 
-        eval_loss = NotImplemented
+        eval_loss += F.cross_entropy(output,target).item()
         prediction = output.argmax(dim=1)
         correct += torch.sum(prediction.eq(target)).item()
     result = {'loss': eval_loss / len(data_loader.dataset),
@@ -803,17 +837,23 @@ if __name__ == "__main__":
     
     # Network Hyperparameters 
     # YOUR CODE HERE 
-    minibatch_size = NotImplemented
-    nepoch = 10
-    learning_rate = NotImplemented
-    momentum = NotImplemented
+    minibatch_size = 32
+    nepoch = 25
+    learning_rate = 0.01
+    momentum = 0
 
 
     model = CNNModel()
     model.to(device)
 
     # YOUR CODE HERE 
-    optimizer = NotImplemented
+    optimizer = torch.optim.Adam(model.parameters(),lr=learning_rate)
+
+    # Data
+    fmnist_train = FashionMNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor())
+    fmnist_train = DataLoader(fmnist_train, batch_size=32, num_workers=4, pin_memory=True)
+    fmnist_val = FashionMNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor())
+    fmnist_val = DataLoader(fmnist_val, batch_size=32, num_workers=4,  pin_memory=True)
 
     # Train for an number of epoch 
     for epoch in range(nepoch):
@@ -827,6 +867,54 @@ if __name__ == "__main__":
 
 """## Open Analysis
 Same as TP 1 please write a short description of your experiment
+
+**Test n°1**
+>*Tous les paramètres de ce premier test ont été pris aléatoirements*
+* minibatch_size = 100
+* nepoch = 15
+* learning rate = 0.1
+* momentum = 0
+* layers => 1 nn.Conv2d + nn.BatchNorm2d + 1 nn.ReLU() + 1 nn.MaxPool2d
+
+**Test n°2**
+>*Rajout d'un nn.Conv2d afin d'améliorer les résultats*
+* minibatch_size = 100
+* nepoch = 15
+* learning rate = 0.1
+* momentum = 0
+* layers => 2 nn.Conv2d + nn.BatchNorm2d + 1 nn.ReLU() + 1 nn.MaxPool2d
+
+**Test n°3**
+>*Rajout d'un nn.Conv2d afin d'améliorer les résultats*
+* minibatch_size = 100
+* nepoch = 15
+* learning rate = 0.1
+* momentum = 0
+* layers => 3 nn.Conv2d + nn.BatchNorm2d + 1 nn.ReLU() + 1 nn.MaxPool2d
+
+**Test n°4**
+>*Ajout d'un momentum et augmentation du learning rate afin de rentre la courbe plus similaire à la courbe d'une exp*
+* minibatch_size = 100
+* nepoch = 15
+* learning rate = 0.01
+* momentum = 0.5
+* layers => 3 nn.Conv2d + nn.BatchNorm2d + 1 nn.ReLU() + 1 nn.MaxPool2d
+
+**Test n°5**
+>*Augmentation du learning rate et du momentum afin d'essayer de diminuer les oscillations*
+* minibatch_size = 100
+* nepoch = 15
+* learning rate = 0.001
+* momentum = 0.9
+* layers => 3 nn.Conv2d + nn.BatchNorm2d + 1 nn.ReLU() + 1 nn.MaxPool2d
+
+**Test n°6**
+> *Après avoir passé plusieurs heures à chercher la meilleur combinaison de paramètres je me suis intérrogé sur la possible bonne idée de mettre un nn.BatchNorm2d et nn.ReLU() après chaque nn.Conv2d. J'ai aussi regardé les paramètres utilisés lors de la transformation de notre Réseau de Neuronnes et je m'en suis inspiré*
+* minibatch_size = 32
+* nepoch = 25
+* learning rate = 0.01
+* momentum = 0
+* layers => (1 nn.Conv2d + nn.BatchNorm2d + 1 nn.ReLU())*3 + 1 nn.MaxPool2d
 
 # BONUS 
 
